@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-
     <LinearLayout
         android:id="@+id/ll_layout_bar"
         android:layout_width="match_parent"
@@ -15,15 +14,13 @@
         android:background="#E4E4E4"
         android:orientation="horizontal">
 
-
-
         <EditText
             android:id="@+id/et_message"
             android:inputType="textShortMessage"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="10dp"
-            android:layout_weight=".5"
+            android:layout_weight="1"
             android:background="@drawable/round_button"
             android:backgroundTint="@android:color/white"
             android:hint="Escribe un mensaje..."
@@ -32,10 +29,10 @@
 
         <Button
             android:id="@+id/btn_send"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_margin="10dp"
-            android:layout_weight="1"
+            android:layout_weight="0.5"
             android:background="@drawable/round_button"
             android:backgroundTint="#26A69A"
             android:text="Enviar"
@@ -52,7 +49,4 @@
         android:background="@color/backgorund"
         tools:itemCount="20"
         tools:listitem="@layout/message_item" />
-
-
-
 </RelativeLayout>
