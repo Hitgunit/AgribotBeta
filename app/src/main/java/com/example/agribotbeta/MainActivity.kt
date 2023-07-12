@@ -15,6 +15,9 @@ class MainActivity : AppCompatActivity() {
     // Aquí está tu adaptador RecyclerView inicialmente nulo
     private var adaptadorRecyclerView: MessageAdapter? = null
 
+    // Inicializamos el RecyclerView aquí
+    private lateinit var rvMessages: RecyclerView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -22,7 +25,7 @@ class MainActivity : AppCompatActivity() {
         // Ahora inicializamos el adaptadorRecyclerView
         adaptadorRecyclerView = MessageAdapter(mensajes)
 
-        val rvMessages = findViewById<RecyclerView>(R.id.rv_messages)
+        rvMessages = findViewById<RecyclerView>(R.id.rv_messages)
         rvMessages.adapter = adaptadorRecyclerView
         rvMessages.layoutManager = LinearLayoutManager(this)
 
@@ -41,6 +44,9 @@ class MainActivity : AppCompatActivity() {
         val respuestaBot = generarRespuestaBot(texto)
         mensajes.add(Mensaje(respuestaBot, true))
         adaptadorRecyclerView?.notifyDataSetChanged()
+
+        // Agregamos la función de desplazamiento al último mensaje después de cada envío
+        rvMessages.scrollToPosition(mensajes.size - 1)
     }
 
     private fun generarRespuestaBot(texto: String): String {
@@ -51,3 +57,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
