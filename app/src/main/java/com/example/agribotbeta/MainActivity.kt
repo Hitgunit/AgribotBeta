@@ -64,7 +64,7 @@ class MainActivity : AppCompatActivity() {
                     for (palabraClave in palabrasClave) {
                         if (texto.contains(palabraClave)) {
                             foundKeyword = true // Encontramos una palabra clave
-                            val soluciones = (document.get("soluciones") as List<Map<String, Any>>).sortedBy { (it["orden"] as String).toInt() }
+                            val soluciones = (document.get("soluciones") as List<Map<String, Any>>).sortedBy { (it["orden"] as Long).toInt() }
                             for (solucion in soluciones) {
                                 // Aquí tienes el texto de la solución
                                 val solucionTexto = solucion["texto"] as String
