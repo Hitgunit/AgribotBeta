@@ -31,10 +31,10 @@ class MainActivity : AppCompatActivity() {
         db.firestoreSettings = settings
     }
 
-    // Esta es la lista de mensajes que inicialmente está vacía
+    // Esta es la lista de mensajes
     val mensajes = mutableListOf<Mensaje>()
 
-    // Aquí está tu adaptador RecyclerView inicialmente nulo
+    // Aquí está el adaptador RecyclerView
     private var adaptadorRecyclerView: MessageAdapter? = null
 
     // Inicializamos el RecyclerView aquí
