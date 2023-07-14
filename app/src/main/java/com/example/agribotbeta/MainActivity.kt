@@ -59,6 +59,10 @@ class MainActivity : AppCompatActivity() {
             etMessage.text.clear()
             enviarMensaje(messageText)
         }
+
+        // Agregar un mensaje inicial del bot
+        mensajes.add(Mensaje("Hola, soy tu asistente. Puedo ayudarte a solucionar problemas. Por favor, describe tu problema.", true))
+        adaptadorRecyclerView?.notifyDataSetChanged()
     }
 
     // Se normaliza el codigo para que el texto ingresado sea indiferente de errores otograficos
