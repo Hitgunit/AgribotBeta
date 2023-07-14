@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import java.text.Normalizer
 
 class MainActivity : AppCompatActivity() {
 
@@ -60,6 +61,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Se normaliza el codigo para que el texto ingresado sea indiferente de errores otograficos
+    fun String.normalize(): String {
+        val temp = Normalizer.normalize(this, Normalizer.Form.NFD)
+        return Regex("[^\\p{ASCII}]").replace(temp, "")
+    }
     private fun enviarMensaje(texto: String) {
         mensajes.add(Mensaje(texto, false))
         generarRespuestaBot(texto)
@@ -72,7 +78,7 @@ class MainActivity : AppCompatActivity() {
     private fun generarRespuestaBot(texto: String) {
         if (problemaActual != null) {
             // Hay un problema actual, así que interpretamos la entrada como una respuesta a la pregunta de si la solución funcionó
-            if (texto.equals("no", ignoreCase = true)) {
+            if (texto.normalize().equals("no", ignoreCase = true)) {
                 // La solución no funcionó, así que sugerimos la próxima
                 val nextSolutionIndex = siguienteSolucionPorProblema.getOrDefault(problemaActual!!, 0) // Índice de la próxima solución
                 val soluciones = solucionesPorProblema[problemaActual!!]!!
@@ -91,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                     adaptadorRecyclerView?.notifyDataSetChanged()
                     rvMessages.scrollToPosition(mensajes.size - 1)
                 }
-            } else if (texto.equals("si", ignoreCase = true)) {
+            } else if (texto.normalize().equals("si", ignoreCase = true)) {
                 // La solución funcionó, por lo que podemos terminar la interacción con respecto a este problema
                 mensajes.add(Mensaje("¡Genial! Me alegra haber podido ayudar. Si tienes algún otro problema, no dudes en preguntar.", true))
                 adaptadorRecyclerView?.notifyDataSetChanged()
@@ -112,7 +118,7 @@ class MainActivity : AppCompatActivity() {
                     loop@ for (document in result) {
                         val palabrasClave = document.get("palabras clave") as List<String>
                         for (palabraClave in palabrasClave) {
-                            if (texto.contains(palabraClave)) {
+                            if (texto.normalize().contains(palabraClave.normalize(), ignoreCase = true)) {
                                 foundKeyword = true // Encontramos una palabra clave
                                 val soluciones = (document.get("soluciones") as List<Map<String, Any>>).sortedBy { (it["orden"] as Long).toInt() }
                                 problemaActual = document.id // El nombre del problema
