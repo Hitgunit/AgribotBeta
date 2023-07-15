@@ -2,6 +2,8 @@ package com.example.agribotbeta
 
 import android.content.ContentValues.TAG
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
@@ -80,6 +82,9 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun generarRespuestaBot(texto: String) {
+        //Se crea la variable para poder retrasar el
+        val handler = Handler(Looper.getMainLooper())
+        handler.postDelayed({
         if (problemaActual != null) {
             // Hay un problema actual, así que interpretamos la entrada como una respuesta a la pregunta de si la solución funcionó
             if (texto.normalize().equals("no", ignoreCase = true)) {
@@ -100,6 +105,7 @@ class MainActivity : AppCompatActivity() {
                     mensajes.add(Mensaje("Lo siento, no tengo más sugerencias para este problema. Porfavor comunicate con el departamento de sistemas.", true))
                     adaptadorRecyclerView?.notifyDataSetChanged()
                     rvMessages.scrollToPosition(mensajes.size - 1)
+                        problemaActual = null // Reseteamos el problema actual
                 }
             } else if (texto.normalize().equals("si", ignoreCase = true)) {
                 // La solución funcionó, por lo que podemos terminar la interacción con respecto a este problema
@@ -150,8 +156,11 @@ class MainActivity : AppCompatActivity() {
                 .addOnFailureListener { exception ->
                     Log.w(TAG, "Error getting documents.", exception)
                 }
-        }
+
     }
+    }, 500)
+
+}
 
 
 
