@@ -97,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                     siguienteSolucionPorProblema[problemaActual!!] = nextSolutionIndex + 1
                 } else {
                     // Si no hay más soluciones, agregamos un mensaje indicando esto
-                    mensajes.add(Mensaje("Lo siento, no tengo más sugerencias para este problema.", true))
+                    mensajes.add(Mensaje("Lo siento, no tengo más sugerencias para este problema. Porfavor comunicate con el departamento de sistemas.", true))
                     adaptadorRecyclerView?.notifyDataSetChanged()
                     rvMessages.scrollToPosition(mensajes.size - 1)
                 }
@@ -124,7 +124,7 @@ class MainActivity : AppCompatActivity() {
                         for (palabraClave in palabrasClave) {
                             if (texto.normalize().contains(palabraClave.normalize(), ignoreCase = true)) {
                                 foundKeyword = true // Encontramos una palabra clave
-                                val soluciones = (document.get("soluciones") as List<Map<String, Any>>).sortedBy { (it["orden"] as Long).toInt() }
+                                val soluciones = (document.get("soluciones") as List<Map<String, Any>>).sortedBy { (it["orden"] as String).toInt() }
                                 problemaActual = document.id // El nombre del problema
                                 solucionesPorProblema[problemaActual!!] = soluciones
                                 siguienteSolucionPorProblema[problemaActual!!] = 0
