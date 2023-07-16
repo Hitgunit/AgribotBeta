@@ -119,46 +119,77 @@ class MainActivity : AppCompatActivity() {
                 adaptadorRecyclerView?.notifyDataSetChanged()
                 rvMessages.scrollToPosition(mensajes.size - 1)
             }
-        } else {
+        }
+        else {
             // No hay un problema actual, así que interpretamos la entrada como una nueva consulta
-            db.collection("Problemas")
-                .get()
-                .addOnSuccessListener { result ->
-                    var foundKeyword = false // Variable para controlar si encontramos una palabra clave
-                    loop@ for (document in result) {
-                        val palabrasClave = document.get("palabras clave") as List<String>
-                        for (palabraClave in palabrasClave) {
-                            if (texto.normalize().contains(palabraClave.normalize(), ignoreCase = true)) {
-                                foundKeyword = true // Encontramos una palabra clave
-                                val soluciones = (document.get("soluciones") as List<Map<String, Any>>).sortedBy { (it["orden"] as String).toInt() }
-                                problemaActual = document.id // El nombre del problema
-                                solucionesPorProblema[problemaActual!!] = soluciones
-                                siguienteSolucionPorProblema[problemaActual!!] = 0
-                                // Sugerimos la primera solución
-                                val solucionTexto = soluciones[0]["texto"] as String
-                                mensajes.add(Mensaje("$solucionTexto\n¿Se solucionó tu problema? Responde con 'sí' o 'no'.", true))
+            if (texto.normalize().equals("ayuda", ignoreCase = true)) {
+                // El usuario ha solicitado ayuda, así que buscamos el documento de ayuda y mostramos su contenido
+                db.collection("Soporte")
+                    .document("Ayuda")
+                    .get()
+                    .addOnSuccessListener { document ->
+                        if (document != null) {
+                            val contenidoAyuda = document.getString("texto")
+                            if (contenidoAyuda != null) {
+                                mensajes.add(Mensaje(contenidoAyuda, true))
                                 adaptadorRecyclerView?.notifyDataSetChanged()
                                 rvMessages.scrollToPosition(mensajes.size - 1)
-                                // Actualizamos el índice de la próxima solución
-                                siguienteSolucionPorProblema[problemaActual!!] = 1
-                                // Saliendo del loop una vez que se ha encontrado la palabra clave en el texto
-                                break@loop
                             }
                         }
                     }
-                    // Si no encontramos ninguna palabra clave, agregamos un mensaje predeterminado
-                    if (!foundKeyword) {
-                        mensajes.add(Mensaje("Lo siento, no puedo ayudarte con eso.", true))
-                        adaptadorRecyclerView?.notifyDataSetChanged()
-                        rvMessages.scrollToPosition(mensajes.size - 1)
+                    .addOnFailureListener { exception ->
+                        Log.w(TAG, "Error getting document.", exception)
                     }
-                }
-                .addOnFailureListener { exception ->
-                    Log.w(TAG, "Error getting documents.", exception)
-                }
+            } else {
+                // No hay un problema actual, así que interpretamos la entrada como una nueva consulta
+                db.collection("Problemas")
+                    .get()
+                    .addOnSuccessListener { result ->
+                        var foundKeyword =
+                            false // Variable para controlar si encontramos una palabra clave
+                        loop@ for (document in result) {
+                            val palabrasClave = document.get("palabras clave") as List<String>
+                            for (palabraClave in palabrasClave) {
+                                if (texto.normalize()
+                                        .contains(palabraClave.normalize(), ignoreCase = true)
+                                ) {
+                                    foundKeyword = true // Encontramos una palabra clave
+                                    val soluciones =
+                                        (document.get("soluciones") as List<Map<String, Any>>).sortedBy { (it["orden"] as String).toInt() }
+                                    problemaActual = document.id // El nombre del problema
+                                    solucionesPorProblema[problemaActual!!] = soluciones
+                                    siguienteSolucionPorProblema[problemaActual!!] = 0
+                                    // Sugerimos la primera solución
+                                    val solucionTexto = soluciones[0]["texto"] as String
+                                    mensajes.add(
+                                        Mensaje(
+                                            "$solucionTexto\n¿Se solucionó tu problema? Responde con 'sí' o 'no'.",
+                                            true
+                                        )
+                                    )
+                                    adaptadorRecyclerView?.notifyDataSetChanged()
+                                    rvMessages.scrollToPosition(mensajes.size - 1)
+                                    // Actualizamos el índice de la próxima solución
+                                    siguienteSolucionPorProblema[problemaActual!!] = 1
+                                    // Saliendo del loop una vez que se ha encontrado la palabra clave en el texto
+                                    break@loop
+                                }
+                            }
+                        }
+                        // Si no encontramos ninguna palabra clave, agregamos un mensaje predeterminado
+                        if (!foundKeyword) {
+                            mensajes.add(Mensaje("Lo siento, no puedo ayudarte con eso.", true))
+                            adaptadorRecyclerView?.notifyDataSetChanged()
+                            rvMessages.scrollToPosition(mensajes.size - 1)
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.w(TAG, "Error getting documents.", exception)
+                    }
 
-    }
-    }, 500)
+            }
+
+        }}, 500)
 
 }
 
