@@ -63,8 +63,22 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Agregar un mensaje inicial del bot
-        mensajes.add(Mensaje("Hola, soy tu asistente. Puedo ayudarte a solucionar problemas. Por favor, describe tu problema.", true))
-        adaptadorRecyclerView?.notifyDataSetChanged()
+        db.collection("Soporte")
+            .document("Bienvenida")
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null) {
+                    val texto = document.getString("texto")
+                    if (texto != null) {
+                        mensajes.add(Mensaje(texto, true))
+                        adaptadorRecyclerView?.notifyDataSetChanged()
+                        rvMessages.scrollToPosition(mensajes.size - 1)
+                    }
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.w(TAG, "Error getting document.", exception)
+            }
     }
 
     // Se normaliza el codigo para que el texto ingresado sea indiferente de errores otograficos
@@ -95,29 +109,86 @@ class MainActivity : AppCompatActivity() {
                     // Si hay una próxima solución, la sugerimos
                     val solucion = soluciones[nextSolutionIndex]
                     val solucionTexto = solucion["texto"] as String
-                    mensajes.add(Mensaje("$solucionTexto\n¿Se solucionó tu problema? Responde con 'sí' o 'no'.", true))
-                    adaptadorRecyclerView?.notifyDataSetChanged()
+                    //Validacion de solucion
+                    db.collection("Soporte")
+                        .document("Validacion")
+                        .get()
+                        .addOnSuccessListener { document ->
+                            if (document != null) {
+                                val texto = document.getString("texto")
+                                if (texto != null) {
+                                    mensajes.add(Mensaje("$solucionTexto\n" + texto, true))
+                                    adaptadorRecyclerView?.notifyDataSetChanged()
+                                    rvMessages.scrollToPosition(mensajes.size - 1)
+                                }
+                            }
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.w(TAG, "Error getting document.", exception)
+                        }
                     rvMessages.scrollToPosition(mensajes.size - 1)
                     // Actualizamos el índice de la próxima solución
                     siguienteSolucionPorProblema[problemaActual!!] = nextSolutionIndex + 1
                 } else {
                     // Si no hay más soluciones, agregamos un mensaje indicando esto
-                    mensajes.add(Mensaje("Lo siento, no tengo más sugerencias para este problema. Porfavor comunicate con el departamento de sistemas.", true))
-                    adaptadorRecyclerView?.notifyDataSetChanged()
-                    rvMessages.scrollToPosition(mensajes.size - 1)
+                    //Validacion de solucion
+                    db.collection("Soporte")
+                        .document("ValidacionFinal")
+                        .get()
+                        .addOnSuccessListener { document ->
+                            if (document != null) {
+                                val texto = document.getString("texto")
+                                if (texto != null) {
+                                    mensajes.add(Mensaje( texto, true))
+                                    adaptadorRecyclerView?.notifyDataSetChanged()
+                                    rvMessages.scrollToPosition(mensajes.size - 1)
+                                }
+                            }
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.w(TAG, "Error getting document.", exception)
+                        }
                         problemaActual = null // Reseteamos el problema actual
                 }
             } else if (texto.normalize().equals("si", ignoreCase = true)) {
                 // La solución funcionó, por lo que podemos terminar la interacción con respecto a este problema
-                mensajes.add(Mensaje("¡Genial! Me alegra haber podido ayudar. Si tienes algún otro problema, no dudes en preguntar.", true))
-                adaptadorRecyclerView?.notifyDataSetChanged()
-                rvMessages.scrollToPosition(mensajes.size - 1)
+                //Validacion de solucion
+                db.collection("Soporte")
+                    .document("ValidacionCorrecta")
+                    .get()
+                    .addOnSuccessListener { document ->
+                        if (document != null) {
+                            val texto = document.getString("texto")
+                            if (texto != null) {
+                                mensajes.add(Mensaje(texto, true))
+                                adaptadorRecyclerView?.notifyDataSetChanged()
+                                rvMessages.scrollToPosition(mensajes.size - 1)
+                            }
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.w(TAG, "Error getting document.", exception)
+                    }
                 problemaActual = null // Reseteamos el problema actual
             } else {
                 // La entrada no fue ni "sí" ni "no", así que le pedimos al usuario que responda correctamente
-                mensajes.add(Mensaje("Por favor, responde con 'sí' o 'no'. ¿Se solucionó tu problema?", true))
-                adaptadorRecyclerView?.notifyDataSetChanged()
-                rvMessages.scrollToPosition(mensajes.size - 1)
+                //Validacion de solucion
+                db.collection("Soporte")
+                    .document("ValidacionErronea")
+                    .get()
+                    .addOnSuccessListener { document ->
+                        if (document != null) {
+                            val texto = document.getString("texto")
+                            if (texto != null) {
+                                mensajes.add(Mensaje(texto, true))
+                                adaptadorRecyclerView?.notifyDataSetChanged()
+                                rvMessages.scrollToPosition(mensajes.size - 1)
+                            }
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.w(TAG, "Error getting document.", exception)
+                    }
             }
         }
         else {
@@ -129,9 +200,9 @@ class MainActivity : AppCompatActivity() {
                     .get()
                     .addOnSuccessListener { document ->
                         if (document != null) {
-                            val contenidoAyuda = document.getString("texto")
-                            if (contenidoAyuda != null) {
-                                mensajes.add(Mensaje(contenidoAyuda, true))
+                            val texto = document.getString("texto")
+                            if (texto != null) {
+                                mensajes.add(Mensaje(texto, true))
                                 adaptadorRecyclerView?.notifyDataSetChanged()
                                 rvMessages.scrollToPosition(mensajes.size - 1)
                             }
@@ -161,14 +232,23 @@ class MainActivity : AppCompatActivity() {
                                     siguienteSolucionPorProblema[problemaActual!!] = 0
                                     // Sugerimos la primera solución
                                     val solucionTexto = soluciones[0]["texto"] as String
-                                    mensajes.add(
-                                        Mensaje(
-                                            "$solucionTexto\n¿Se solucionó tu problema? Responde con 'sí' o 'no'.",
-                                            true
-                                        )
-                                    )
-                                    adaptadorRecyclerView?.notifyDataSetChanged()
-                                    rvMessages.scrollToPosition(mensajes.size - 1)
+                                    //Validacion de solucion
+                                    db.collection("Soporte")
+                                        .document("Validacion")
+                                        .get()
+                                        .addOnSuccessListener { document ->
+                                            if (document != null) {
+                                                val texto = document.getString("texto")
+                                                if (texto != null) {
+                                                    mensajes.add(Mensaje("$solucionTexto\n" + texto, true))
+                                                    adaptadorRecyclerView?.notifyDataSetChanged()
+                                                    rvMessages.scrollToPosition(mensajes.size - 1)
+                                                }
+                                            }
+                                        }
+                                        .addOnFailureListener { exception ->
+                                            Log.w(TAG, "Error getting document.", exception)
+                                        }
                                     // Actualizamos el índice de la próxima solución
                                     siguienteSolucionPorProblema[problemaActual!!] = 1
                                     // Saliendo del loop una vez que se ha encontrado la palabra clave en el texto
@@ -178,6 +258,23 @@ class MainActivity : AppCompatActivity() {
                         }
                         // Si no encontramos ninguna palabra clave, agregamos un mensaje predeterminado
                         if (!foundKeyword) {
+
+                            db.collection("Soporte")
+                                .document("Error")
+                                .get()
+                                .addOnSuccessListener { document ->
+                                    if (document != null) {
+                                        val texto = document.getString("texto")
+                                        if (texto != null) {
+                                            mensajes.add(Mensaje(texto, true))
+                                            adaptadorRecyclerView?.notifyDataSetChanged()
+                                            rvMessages.scrollToPosition(mensajes.size - 1)
+                                        }
+                                    }
+                                }
+                                .addOnFailureListener { exception ->
+                                    Log.w(TAG, "Error getting document.", exception)
+                                }
                             mensajes.add(Mensaje("Lo siento, no puedo ayudarte con eso.", true))
                             adaptadorRecyclerView?.notifyDataSetChanged()
                             rvMessages.scrollToPosition(mensajes.size - 1)
