@@ -275,9 +275,6 @@ class MainActivity : AppCompatActivity() {
                                 .addOnFailureListener { exception ->
                                     Log.w(TAG, "Error getting document.", exception)
                                 }
-                            mensajes.add(Mensaje("Lo siento, no puedo ayudarte con eso.", true))
-                            adaptadorRecyclerView?.notifyDataSetChanged()
-                            rvMessages.scrollToPosition(mensajes.size - 1)
                         }
                     }
                     .addOnFailureListener { exception ->
