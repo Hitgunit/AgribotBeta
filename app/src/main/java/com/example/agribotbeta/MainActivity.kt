@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity() {
                     // Si hay una próxima solución, la sugerimos
                     val solucion = soluciones[nextSolutionIndex]
                     val solucionTexto = solucion["texto"] as String
-                    val solucionImagen = soluciones[0]["imagen"] as String?
+                    val solucionImagen = solucion["imagen"] as String?
                     //Validacion de solucion
                     db.collection("Soporte")
                         .document("Validacion")

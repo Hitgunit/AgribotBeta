@@ -51,7 +51,7 @@ class MessageAdapter(private val messages: List<Mensaje>) :
             holder.tvBotMessage?.text = message.texto
             if (message.imagen != null) {
                 Glide.with(holder.ivBotImage?.context!!)
-                    .load(message.imagen)
+                    .load(message.imagen).fitCenter()
                     .into(holder.ivBotImage!!)
                 holder.ivBotImage.visibility = View.VISIBLE
             } else {
