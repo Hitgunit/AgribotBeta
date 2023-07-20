@@ -3,8 +3,10 @@ package com.example.agribotbeta
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 
 class MessageAdapter(private val messages: List<Mensaje>) :
     RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
@@ -17,6 +19,7 @@ class MessageAdapter(private val messages: List<Mensaje>) :
     inner class MessageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvMessage: TextView? = view.findViewById(R.id.tv_message)
         val tvBotMessage: TextView? = view.findViewById(R.id.tv_bot_message)
+        val ivBotImage: ImageView? = view.findViewById(R.id.iv_bot_image) //Imagen
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
@@ -46,9 +49,16 @@ class MessageAdapter(private val messages: List<Mensaje>) :
         val message = messages[position]
         if (message.esBot) {
             holder.tvBotMessage?.text = message.texto
+            if (message.imagen != null) {
+                Glide.with(holder.ivBotImage?.context!!)
+                    .load(message.imagen)
+                    .into(holder.ivBotImage!!)
+                holder.ivBotImage.visibility = View.VISIBLE
+            } else {
+                holder.ivBotImage?.visibility = View.GONE
+            }
         } else {
             holder.tvMessage?.text = message.texto
         }
     }
 }
-

@@ -109,6 +109,7 @@ class MainActivity : AppCompatActivity() {
                     // Si hay una próxima solución, la sugerimos
                     val solucion = soluciones[nextSolutionIndex]
                     val solucionTexto = solucion["texto"] as String
+                    val solucionImagen = soluciones[0]["imagen"] as String?
                     //Validacion de solucion
                     db.collection("Soporte")
                         .document("Validacion")
@@ -117,7 +118,7 @@ class MainActivity : AppCompatActivity() {
                             if (document != null) {
                                 val texto = document.getString("texto")
                                 if (texto != null) {
-                                    mensajes.add(Mensaje("$solucionTexto\n" + texto, true))
+                                    mensajes.add(Mensaje("$solucionTexto\n" + texto, true, solucionImagen))
                                     adaptadorRecyclerView?.notifyDataSetChanged()
                                     rvMessages.scrollToPosition(mensajes.size - 1)
                                 }
@@ -232,6 +233,7 @@ class MainActivity : AppCompatActivity() {
                                     siguienteSolucionPorProblema[problemaActual!!] = 0
                                     // Sugerimos la primera solución
                                     val solucionTexto = soluciones[0]["texto"] as String
+                                    val solucionImagen = soluciones[0]["imagen"] as String?
                                     //Validacion de solucion
                                     db.collection("Soporte")
                                         .document("Validacion")
@@ -240,7 +242,7 @@ class MainActivity : AppCompatActivity() {
                                             if (document != null) {
                                                 val texto = document.getString("texto")
                                                 if (texto != null) {
-                                                    mensajes.add(Mensaje("$solucionTexto\n" + texto, true))
+                                                    mensajes.add(Mensaje("$solucionTexto\n" + texto, true, solucionImagen))
                                                     adaptadorRecyclerView?.notifyDataSetChanged()
                                                     rvMessages.scrollToPosition(mensajes.size - 1)
                                                 }
