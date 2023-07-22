@@ -127,7 +127,6 @@ class MainActivity : AppCompatActivity() {
                         .addOnFailureListener { exception ->
                             Log.w(TAG, "Error getting document.", exception)
                         }
-                    rvMessages.scrollToPosition(mensajes.size - 1)
                     // Actualizamos el índice de la próxima solución
                     siguienteSolucionPorProblema[problemaActual!!] = nextSolutionIndex + 1
                 } else {
