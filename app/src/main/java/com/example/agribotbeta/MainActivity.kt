@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.SetOptions
 import java.text.Normalizer
 
 class MainActivity : AppCompatActivity() {
@@ -86,6 +87,7 @@ class MainActivity : AppCompatActivity() {
         val temp = Normalizer.normalize(this, Normalizer.Form.NFD)
         return Regex("[^\\p{ASCII}]").replace(temp, "")
     }
+
     private fun enviarMensaje(texto: String) {
         mensajes.add(Mensaje(texto, false))
         generarRespuestaBot(texto)
@@ -99,195 +101,222 @@ class MainActivity : AppCompatActivity() {
         //Se crea la variable para poder retrasar el
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed({
-        if (problemaActual != null) {
-            // Hay un problema actual, así que interpretamos la entrada como una respuesta a la pregunta de si la solución funcionó
-            if (texto.normalize().equals("no", ignoreCase = true)) {
-                // La solución no funcionó, así que sugerimos la próxima
-                val nextSolutionIndex = siguienteSolucionPorProblema.getOrDefault(problemaActual!!, 0) // Índice de la próxima solución
-                val soluciones = solucionesPorProblema[problemaActual!!]!!
-                if (nextSolutionIndex < soluciones.size) {
-                    // Si hay una próxima solución, la sugerimos
-                    val solucion = soluciones[nextSolutionIndex]
-                    val solucionTexto = solucion["texto"] as String
-                    val solucionImagen = solucion["imagen"] as String?
-                    //Validacion de solucion
-                    db.collection("Soporte")
-                        .document("Validacion")
-                        .get()
-                        .addOnSuccessListener { document ->
-                            if (document != null) {
-                                val texto = document.getString("texto")
-                                if (texto != null) {
-                                    mensajes.add(Mensaje("$solucionTexto\n" + texto, true, solucionImagen))
-                                    adaptadorRecyclerView?.notifyDataSetChanged()
-                                    rvMessages.scrollToPosition(mensajes.size - 1)
-                                }
-                            }
-                        }
-                        .addOnFailureListener { exception ->
-                            Log.w(TAG, "Error getting document.", exception)
-                        }
-                    // Actualizamos el índice de la próxima solución
-                    siguienteSolucionPorProblema[problemaActual!!] = nextSolutionIndex + 1
-                } else {
-                    // Si no hay más soluciones, agregamos un mensaje indicando esto
-                    //Validacion de solucion
-                    db.collection("Soporte")
-                        .document("ValidacionFinal")
-                        .get()
-                        .addOnSuccessListener { document ->
-                            if (document != null) {
-                                val texto = document.getString("texto")
-                                if (texto != null) {
-                                    mensajes.add(Mensaje( texto, true))
-                                    adaptadorRecyclerView?.notifyDataSetChanged()
-                                    rvMessages.scrollToPosition(mensajes.size - 1)
-                                }
-                            }
-                        }
-                        .addOnFailureListener { exception ->
-                            Log.w(TAG, "Error getting document.", exception)
-                        }
-                        problemaActual = null // Reseteamos el problema actual
-                }
-            } else if (texto.normalize().equals("si", ignoreCase = true)) {
-                // La solución funcionó, por lo que podemos terminar la interacción con respecto a este problema
-                //Validacion de solucion
-                db.collection("Soporte")
-                    .document("ValidacionCorrecta")
-                    .get()
-                    .addOnSuccessListener { document ->
-                        if (document != null) {
-                            val texto = document.getString("texto")
-                            if (texto != null) {
-                                mensajes.add(Mensaje(texto, true))
-                                adaptadorRecyclerView?.notifyDataSetChanged()
-                                rvMessages.scrollToPosition(mensajes.size - 1)
-                            }
-                        }
-                    }
-                    .addOnFailureListener { exception ->
-                        Log.w(TAG, "Error getting document.", exception)
-                    }
-                problemaActual = null // Reseteamos el problema actual
-            } else {
-                // La entrada no fue ni "sí" ni "no", así que le pedimos al usuario que responda correctamente
-                //Validacion de solucion
-                db.collection("Soporte")
-                    .document("ValidacionErronea")
-                    .get()
-                    .addOnSuccessListener { document ->
-                        if (document != null) {
-                            val texto = document.getString("texto")
-                            if (texto != null) {
-                                mensajes.add(Mensaje(texto, true))
-                                adaptadorRecyclerView?.notifyDataSetChanged()
-                                rvMessages.scrollToPosition(mensajes.size - 1)
-                            }
-                        }
-                    }
-                    .addOnFailureListener { exception ->
-                        Log.w(TAG, "Error getting document.", exception)
-                    }
-            }
-        }
-        else {
-            // No hay un problema actual, así que interpretamos la entrada como una nueva consulta
-            if (texto.normalize().equals("ayuda", ignoreCase = true)) {
-                // El usuario ha solicitado ayuda, así que buscamos el documento de ayuda y mostramos su contenido
-                db.collection("Soporte")
-                    .document("Ayuda")
-                    .get()
-                    .addOnSuccessListener { document ->
-                        if (document != null) {
-                            val texto = document.getString("texto")
-                            if (texto != null) {
-                                mensajes.add(Mensaje(texto, true))
-                                adaptadorRecyclerView?.notifyDataSetChanged()
-                                rvMessages.scrollToPosition(mensajes.size - 1)
-                            }
-                        }
-                    }
-                    .addOnFailureListener { exception ->
-                        Log.w(TAG, "Error getting document.", exception)
-                    }
-            } else {
-                // No hay un problema actual, así que interpretamos la entrada como una nueva consulta
-                db.collection("Problemas")
-                    .get()
-                    .addOnSuccessListener { result ->
-                        var foundKeyword =
-                            false // Variable para controlar si encontramos una palabra clave
-                        loop@ for (document in result) {
-                            val palabrasClave = document.get("palabras clave") as List<String>
-                            for (palabraClave in palabrasClave) {
-                                if (texto.normalize()
-                                        .contains(palabraClave.normalize(), ignoreCase = true)
-                                ) {
-                                    foundKeyword = true // Encontramos una palabra clave
-                                    val soluciones =
-                                        (document.get("soluciones") as List<Map<String, Any>>).sortedBy { (it["orden"] as String).toInt() }
-                                    problemaActual = document.id // El nombre del problema
-                                    solucionesPorProblema[problemaActual!!] = soluciones
-                                    siguienteSolucionPorProblema[problemaActual!!] = 0
-                                    // Sugerimos la primera solución
-                                    val solucionTexto = soluciones[0]["texto"] as String
-                                    val solucionImagen = soluciones[0]["imagen"] as String?
-                                    //Validacion de solucion
-                                    db.collection("Soporte")
-                                        .document("Validacion")
-                                        .get()
-                                        .addOnSuccessListener { document ->
-                                            if (document != null) {
-                                                val texto = document.getString("texto")
-                                                if (texto != null) {
-                                                    mensajes.add(Mensaje("$solucionTexto\n" + texto, true, solucionImagen))
-                                                    adaptadorRecyclerView?.notifyDataSetChanged()
-                                                    rvMessages.scrollToPosition(mensajes.size - 1)
-                                                }
-                                            }
-                                        }
-                                        .addOnFailureListener { exception ->
-                                            Log.w(TAG, "Error getting document.", exception)
-                                        }
-                                    // Actualizamos el índice de la próxima solución
-                                    siguienteSolucionPorProblema[problemaActual!!] = 1
-                                    // Saliendo del loop una vez que se ha encontrado la palabra clave en el texto
-                                    break@loop
-                                }
-                            }
-                        }
-                        // Si no encontramos ninguna palabra clave, agregamos un mensaje predeterminado
-                        if (!foundKeyword) {
-
-                            db.collection("Soporte")
-                                .document("Error")
-                                .get()
-                                .addOnSuccessListener { document ->
-                                    if (document != null) {
-                                        val texto = document.getString("texto")
-                                        if (texto != null) {
-                                            mensajes.add(Mensaje(texto, true))
-                                            adaptadorRecyclerView?.notifyDataSetChanged()
-                                            rvMessages.scrollToPosition(mensajes.size - 1)
-                                        }
+            if (problemaActual != null) {
+                // Hay un problema actual, así que interpretamos la entrada como una respuesta a la pregunta de si la solución funcionó
+                if (texto.normalize().equals("no", ignoreCase = true)) {
+                    // La solución no funcionó, así que sugerimos la próxima
+                    val nextSolutionIndex = siguienteSolucionPorProblema.getOrDefault(
+                        problemaActual!!,
+                        0
+                    ) // Índice de la próxima solución
+                    val soluciones = solucionesPorProblema[problemaActual!!]!!
+                    if (nextSolutionIndex < soluciones.size) {
+                        // Si hay una próxima solución, la sugerimos
+                        val solucion = soluciones[nextSolutionIndex]
+                        val solucionTexto = solucion["texto"] as String
+                        val solucionImagen = solucion["imagen"] as String?
+                        //Validacion de solucion
+                        db.collection("Soporte")
+                            .document("Validacion")
+                            .get()
+                            .addOnSuccessListener { document ->
+                                if (document != null) {
+                                    val texto = document.getString("texto")
+                                    if (texto != null) {
+                                        mensajes.add(
+                                            Mensaje(
+                                                "$solucionTexto\n" + texto,
+                                                true,
+                                                solucionImagen
+                                            )
+                                        )
+                                        adaptadorRecyclerView?.notifyDataSetChanged()
+                                        rvMessages.scrollToPosition(mensajes.size - 1)
                                     }
                                 }
-                                .addOnFailureListener { exception ->
-                                    Log.w(TAG, "Error getting document.", exception)
+                            }
+                            .addOnFailureListener { exception ->
+                                Log.w(TAG, "Error getting document.", exception)
+                            }
+                        // Actualizamos el índice de la próxima solución
+                        siguienteSolucionPorProblema[problemaActual!!] = nextSolutionIndex + 1
+                    } else {
+                        // Si no hay más soluciones, agregamos un mensaje indicando esto
+                        //Validacion de solucion
+                        db.collection("Soporte")
+                            .document("ValidacionFinal")
+                            .get()
+                            .addOnSuccessListener { document ->
+                                if (document != null) {
+                                    val texto = document.getString("texto")
+                                    if (texto != null) {
+                                        mensajes.add(Mensaje(texto, true))
+                                        adaptadorRecyclerView?.notifyDataSetChanged()
+                                        rvMessages.scrollToPosition(mensajes.size - 1)
+                                    }
                                 }
+                            }
+                            .addOnFailureListener { exception ->
+                                Log.w(TAG, "Error getting document.", exception)
+                            }
+                        problemaActual = null // Reseteamos el problema actual
+                    }
+                } else if (texto.normalize().equals("si", ignoreCase = true)) {
+                    // La solución funcionó, por lo que podemos terminar la interacción con respecto a este problema
+                    //Validacion de solucion
+                    db.collection("Soporte")
+                        .document("ValidacionCorrecta")
+                        .get()
+                        .addOnSuccessListener { document ->
+                            if (document != null) {
+                                val texto = document.getString("texto")
+                                if (texto != null) {
+                                    mensajes.add(Mensaje(texto, true))
+                                    adaptadorRecyclerView?.notifyDataSetChanged()
+                                    rvMessages.scrollToPosition(mensajes.size - 1)
+                                }
+                            }
                         }
-                    }
-                    .addOnFailureListener { exception ->
-                        Log.w(TAG, "Error getting documents.", exception)
-                    }
+                        .addOnFailureListener { exception ->
+                            Log.w(TAG, "Error getting document.", exception)
+                        }
+                    problemaActual = null // Reseteamos el problema actual
+                } else {
+                    // La entrada no fue ni "sí" ni "no", así que le pedimos al usuario que responda correctamente
+                    //Validacion de solucion
+                    db.collection("Soporte")
+                        .document("ValidacionErronea")
+                        .get()
+                        .addOnSuccessListener { document ->
+                            if (document != null) {
+                                val texto = document.getString("texto")
+                                if (texto != null) {
+                                    mensajes.add(Mensaje(texto, true))
+                                    adaptadorRecyclerView?.notifyDataSetChanged()
+                                    rvMessages.scrollToPosition(mensajes.size - 1)
+                                }
+                            }
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.w(TAG, "Error getting document.", exception)
+                        }
+                }
+            } else {
+                // No hay un problema actual, así que interpretamos la entrada como una nueva consulta
+                if (texto.normalize().equals("ayuda", ignoreCase = true)) {
+                    // El usuario ha solicitado ayuda, así que buscamos el documento de ayuda y mostramos su contenido
+                    db.collection("Soporte")
+                        .document("Ayuda")
+                        .get()
+                        .addOnSuccessListener { document ->
+                            if (document != null) {
+                                val texto = document.getString("texto")
+                                if (texto != null) {
+                                    mensajes.add(Mensaje(texto, true))
+                                    adaptadorRecyclerView?.notifyDataSetChanged()
+                                    rvMessages.scrollToPosition(mensajes.size - 1)
+                                }
+                            }
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.w(TAG, "Error getting document.", exception)
+                        }
+                } else {
+                    // No hay un problema actual, así que interpretamos la entrada como una nueva consulta
+                    db.collection("Problemas")
+                        .get()
+                        .addOnSuccessListener { result ->
+                            var foundKeyword =
+                                false // Variable para controlar si encontramos una palabra clave
+                            loop@ for (document in result) {
+                                val palabrasClave = document.get("palabras clave") as List<String>
+                                for (palabraClave in palabrasClave) {
+                                    if (texto.normalize()
+                                            .contains(palabraClave.normalize(), ignoreCase = true)
+                                    ) {
+                                        foundKeyword = true // Encontramos una palabra clave
+                                        val soluciones =
+                                            (document.get("soluciones") as List<Map<String, Any>>).sortedBy { (it["orden"] as String).toInt() }
+                                        problemaActual = document.id // El nombre del problema
+                                        solucionesPorProblema[problemaActual!!] = soluciones
+                                        siguienteSolucionPorProblema[problemaActual!!] = 0
+                                        // Sugerimos la primera solución
+                                        val solucionTexto = soluciones[0]["texto"] as String
+                                        val solucionImagen = soluciones[0]["imagen"] as String?
+                                        //Validacion de solucion
+                                        db.collection("Soporte")
+                                            .document("Validacion")
+                                            .get()
+                                            .addOnSuccessListener { document ->
+                                                if (document != null) {
+                                                    val texto = document.getString("texto")
+                                                    if (texto != null) {
+                                                        mensajes.add(
+                                                            Mensaje(
+                                                                "$solucionTexto\n" + texto,
+                                                                true,
+                                                                solucionImagen
+                                                            )
+                                                        )
+                                                        adaptadorRecyclerView?.notifyDataSetChanged()
+                                                        rvMessages.scrollToPosition(mensajes.size - 1)
+                                                    }
+                                                }
+                                            }
+                                            .addOnFailureListener { exception ->
+                                                Log.w(TAG, "Error getting document.", exception)
+                                            }
+                                        // Actualizamos el índice de la próxima solución
+                                        siguienteSolucionPorProblema[problemaActual!!] = 1
+                                        // Saliendo del loop una vez que se ha encontrado la palabra clave en el texto
+                                        break@loop
+                                    }
+                                }
+                            }
+                            // Si no encontramos ninguna palabra clave, agregamos un mensaje predeterminado
+                            if (!foundKeyword) {
+
+                                db.collection("Soporte")
+                                    .document("Error")
+                                    .get()
+                                    .addOnSuccessListener { document ->
+                                        if (document != null) {
+                                            val texto = document.getString("texto")
+                                            if (texto != null) {
+                                                mensajes.add(Mensaje(texto, true))
+                                                adaptadorRecyclerView?.notifyDataSetChanged()
+                                                rvMessages.scrollToPosition(mensajes.size - 1)
+                                            }
+                                        }
+                                    }
+                                    .addOnFailureListener { exception ->
+                                        Log.w(TAG, "Error getting document.", exception)
+                                    }
+                                val data = hashMapOf("texto" to texto.toString())
+                                db.collection("Diccionario")
+                                    .add(data)
+                                    .addOnSuccessListener { documentReference ->
+                                        Log.d(
+                                            TAG,
+                                            "DocumentSnapshot written with ID: ${documentReference.id}"
+                                        )
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Log.w(TAG, "Error adding document", e)
+                                    }
+                            }
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.w(TAG, "Error getting documents.", exception)
+                        }
+
+                }
+
 
             }
+        }, 500)
 
-        }}, 500)
-
-}
-
+    }
 
 
 }
