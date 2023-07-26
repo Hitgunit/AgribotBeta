@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import android.content.Context
 import androidx.appcompat.app.AlertDialog
+import com.github.chrisbanes.photoview.PhotoView
 
 class MessageAdapter(private val messages: List<Mensaje>) :
     RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
@@ -70,11 +71,11 @@ class MessageAdapter(private val messages: List<Mensaje>) :
     private fun showImageDialog(context: Context, imageUrl: String) {
         val builder = AlertDialog.Builder(context)
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_image, null)
-        val imageView = dialogView.findViewById<ImageView>(R.id.dialog_image_view)
+        val photoView = dialogView.findViewById<PhotoView>(R.id.dialog_image_view)
 
         Glide.with(context)
             .load(imageUrl).fitCenter()
-            .into(imageView)
+            .into(photoView)
 
         builder.setView(dialogView)
             .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
