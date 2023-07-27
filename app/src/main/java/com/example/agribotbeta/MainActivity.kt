@@ -69,7 +69,7 @@ class MainActivity : AppCompatActivity() {
             .get()
             .addOnSuccessListener { document ->
                 if (document != null) {
-                    val texto = document.getString("texto")
+                    val texto = document.getString("texto")?.replace("\\n", "\n")
                     if (texto != null) {
                         mensajes.add(Mensaje(texto, true))
                         adaptadorRecyclerView?.notifyDataSetChanged()
@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity() {
                     if (nextSolutionIndex < soluciones.size) {
                         // Si hay una próxima solución, la sugerimos
                         val solucion = soluciones[nextSolutionIndex]
-                        val solucionTexto = solucion["texto"] as String
+                        val solucionTexto = (solucion["texto"] as String)?.replace("\\n", "\n")
                         val solucionImagen = solucion["imagen"] as String?
                         //Validacion de solucion
                         db.collection("Soporte")
@@ -121,11 +121,11 @@ class MainActivity : AppCompatActivity() {
                             .get()
                             .addOnSuccessListener { document ->
                                 if (document != null) {
-                                    val texto = document.getString("texto")
+                                    val texto = document.getString("texto")?.replace("\\n", "\n")
                                     if (texto != null) {
                                         mensajes.add(
                                             Mensaje(
-                                                "$solucionTexto\n" + texto,
+                                                "$solucionTexto \n" + texto,
                                                 true,
                                                 solucionImagen
                                             )
@@ -148,7 +148,7 @@ class MainActivity : AppCompatActivity() {
                             .get()
                             .addOnSuccessListener { document ->
                                 if (document != null) {
-                                    val texto = document.getString("texto")
+                                    val texto = document.getString("texto")?.replace("\\n", "\n")
                                     if (texto != null) {
                                         mensajes.add(Mensaje(texto, true))
                                         adaptadorRecyclerView?.notifyDataSetChanged()
@@ -169,7 +169,7 @@ class MainActivity : AppCompatActivity() {
                         .get()
                         .addOnSuccessListener { document ->
                             if (document != null) {
-                                val texto = document.getString("texto")
+                                val texto = document.getString("texto")?.replace("\\n", "\n")
                                 if (texto != null) {
                                     mensajes.add(Mensaje(texto, true))
                                     adaptadorRecyclerView?.notifyDataSetChanged()
@@ -189,7 +189,7 @@ class MainActivity : AppCompatActivity() {
                         .get()
                         .addOnSuccessListener { document ->
                             if (document != null) {
-                                val texto = document.getString("texto")
+                                val texto = document.getString("texto")?.replace("\\n", "\n")
                                 if (texto != null) {
                                     mensajes.add(Mensaje(texto, true))
                                     adaptadorRecyclerView?.notifyDataSetChanged()
@@ -210,7 +210,7 @@ class MainActivity : AppCompatActivity() {
                         .get()
                         .addOnSuccessListener { document ->
                             if (document != null) {
-                                val texto = document.getString("texto")
+                                val texto = document.getString("texto")?.replace("\\n", "\n")
                                 if (texto != null) {
                                     mensajes.add(Mensaje(texto, true))
                                     adaptadorRecyclerView?.notifyDataSetChanged()
@@ -241,7 +241,7 @@ class MainActivity : AppCompatActivity() {
                                         solucionesPorProblema[problemaActual!!] = soluciones
                                         siguienteSolucionPorProblema[problemaActual!!] = 0
                                         // Sugerimos la primera solución
-                                        val solucionTexto = soluciones[0]["texto"] as String
+                                        val solucionTexto = (soluciones[0]["texto"] as String)?.replace("\\n", "\n")
                                         val solucionImagen = soluciones[0]["imagen"] as String?
                                         //Validacion de solucion
                                         db.collection("Soporte")
@@ -249,7 +249,7 @@ class MainActivity : AppCompatActivity() {
                                             .get()
                                             .addOnSuccessListener { document ->
                                                 if (document != null) {
-                                                    val texto = document.getString("texto")
+                                                    val texto = document.getString("texto")?.replace("\\n", "\n")
                                                     if (texto != null) {
                                                         mensajes.add(
                                                             Mensaje(
@@ -281,7 +281,7 @@ class MainActivity : AppCompatActivity() {
                                     .get()
                                     .addOnSuccessListener { document ->
                                         if (document != null) {
-                                            val texto = document.getString("texto")
+                                            val texto = document.getString("texto")?.replace("\\n", "\n")
                                             if (texto != null) {
                                                 mensajes.add(Mensaje(texto, true))
                                                 adaptadorRecyclerView?.notifyDataSetChanged()
