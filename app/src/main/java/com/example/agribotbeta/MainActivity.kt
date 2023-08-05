@@ -17,22 +17,17 @@ import java.text.Normalizer
 
 class MainActivity : AppCompatActivity() {
 
+    // Variable opcional que guarda el problema actual (puede ser null)
     var problemaActual: String? = null
+
+    // Mapeo de problemas a sus respectivas soluciones (cada solución es un mapa de String a Any)
     val solucionesPorProblema = mutableMapOf<String, List<Map<String, Any>>>()
 
     // Mapeo de problemas a los índices de sus próximas soluciones
     val siguienteSolucionPorProblema = mutableMapOf<String, Int>()
 
-    //Variable de conexion firebase
+    // Variable para gestionar la conexión a Firebase (Firestore)
     private val db = FirebaseFirestore.getInstance()
-
-    //Se inicializa la configuracion para que el chache almacene la base de datos sin internet
-    init {
-        val settings = FirebaseFirestoreSettings.Builder()
-            .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
-            .build()
-        db.firestoreSettings = settings
-    }
 
     // Esta es la lista de mensajes
     val mensajes = mutableListOf<Mensaje>()
@@ -43,44 +38,57 @@ class MainActivity : AppCompatActivity() {
     // Inicializamos el RecyclerView aquí
     private lateinit var rvMessages: RecyclerView
 
+    //Se inicializa la configuracion para que el chache almacene la base de datos sin internet
+    init {
+        val settings = FirebaseFirestoreSettings.Builder()
+            .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
+            .build()
+        db.firestoreSettings = settings
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Ahora inicializamos el adaptadorRecyclerView
+        // Inicialización del adaptadorRecyclerView
         adaptadorRecyclerView = MessageAdapter(mensajes)
 
+        // Configuración del RecyclerView
         rvMessages = findViewById<RecyclerView>(R.id.rv_messages)
         rvMessages.adapter = adaptadorRecyclerView
         rvMessages.layoutManager = LinearLayoutManager(this)
 
+        // Inicialización de los botones y campos de texto
         val btnSend = findViewById<Button>(R.id.btn_send)
         val etMessage = findViewById<EditText>(R.id.et_message)
 
+        // Configuración del botón de enviar mensaje
         btnSend.setOnClickListener {
-            val messageText = etMessage.text.toString()
-            etMessage.text.clear()
-            enviarMensaje(messageText)
+            val messageText = etMessage.text.toString() // Obtener el texto del mensaje
+            etMessage.text.clear() // Limpiar el campo de texto
+            enviarMensaje(messageText) // Llamar a la función para enviar el mensaje
         }
 
-        // Agregar un mensaje inicial del bot
+        // Agregar un mensaje inicial del bot desde Firebase
         db.collection("Soporte")
             .document("Bienvenida")
             .get()
             .addOnSuccessListener { document ->
                 if (document != null) {
-                    val texto = document.getString("texto")?.replace("\\n", "\n")
+                    val texto = document.getString("texto")?.replace("\\n", "\n") // Obtener y procesar el texto del mensaje
                     if (texto != null) {
-                        mensajes.add(Mensaje(texto, true))
-                        adaptadorRecyclerView?.notifyDataSetChanged()
-                        rvMessages.scrollToPosition(mensajes.size - 1)
+                        mensajes.add(Mensaje(texto, true)) // Agregar el mensaje a la lista
+                        adaptadorRecyclerView?.notifyDataSetChanged() // Notificar al adaptador sobre los cambios
+                        rvMessages.scrollToPosition(mensajes.size - 1) // Desplazar el RecyclerView a la última posición
                     }
                 }
             }
             .addOnFailureListener { exception ->
-                Log.w(TAG, "Error getting document.", exception)
+                Log.w(TAG, "Error getting document.", exception) // Registrar error en caso de falla
             }
     }
+
+
 
     // Se normaliza el codigo para que el texto ingresado sea indiferente de errores otograficos
     fun String.normalize(): String {
@@ -88,17 +96,26 @@ class MainActivity : AppCompatActivity() {
         return Regex("[^\\p{ASCII}]").replace(temp, "")
     }
 
+    // Función para enviar un mensaje desde el usuario
     private fun enviarMensaje(texto: String) {
+        // Añadimos el mensaje enviado por el usuario a la lista de mensajes
         mensajes.add(Mensaje(texto, false))
+
+        // Generamos una respuesta del bot basada en el texto del mensaje del usuario
         generarRespuestaBot(texto)
+
+        // Notificamos al adaptador del RecyclerView que los datos han cambiado para que se pueda actualizar la interfaz
         adaptadorRecyclerView?.notifyDataSetChanged()
-        // Agregamos la función de desplazamiento al último mensaje después de cada envío
+
+        // Nos aseguramos de que el RecyclerView se desplace hasta el último mensaje después de cada envío
+        // para que el usuario pueda ver su propio mensaje y la respuesta del bot
         rvMessages.scrollToPosition(mensajes.size - 1)
     }
 
 
+
     private fun generarRespuestaBot(texto: String) {
-        //Se crea la variable para poder retrasar el
+        //Se crea la variable para poder retrasar el mensaje
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed({
             if (problemaActual != null) {
