@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import android.content.Context
+import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 import com.github.chrisbanes.photoview.PhotoView
 
@@ -101,11 +102,19 @@ class MessageAdapter(private val messages: List<Mensaje>) :
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_image, null)
         // Encontrar la vista photo dentro del diseño inflado
         val photoView = dialogView.findViewById<PhotoView>(R.id.dialog_image_view)
+        //
+        val imageView = dialogView.findViewById<ImageView>(R.id.zoom_image)
 
         // Utilizar la biblioteca Glide para cargar la imagen desde la URL, ajustarla al centro y colocarla en la vista de la foto
         Glide.with(context)
             .load(imageUrl).fitCenter()
             .into(photoView)
+
+        Glide.with(context)
+            .asGif()
+            .load(R.drawable._zoom)
+            .into(imageView)
+
 
         // Configurar el cuadro de diálogo con la vista preparada y un botón "OK" para cerrarlo
         builder.setView(dialogView)
