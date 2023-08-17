@@ -4,6 +4,7 @@ import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings.Secure
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
@@ -12,8 +13,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.google.firebase.firestore.SetOptions
+import java.security.AccessController.getContext
 import java.text.Normalizer
+import java.text.SimpleDateFormat
+import java.util.Date
+import android.provider.Settings
+
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,6 +43,11 @@ class MainActivity : AppCompatActivity() {
 
     // Inicializamos el RecyclerView aquí
     private lateinit var rvMessages: RecyclerView
+
+    //Se obtiene la fecha y hora
+    val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    val currentDateAndTime = sdf.format(Date())
+
 
     //Se inicializa la configuracion para que el chache almacene la base de datos sin internet
     init {
@@ -67,6 +78,7 @@ class MainActivity : AppCompatActivity() {
             val messageText = etMessage.text.toString() // Obtener el texto del mensaje
             etMessage.text.clear() // Limpiar el campo de texto
             enviarMensaje(messageText) // Llamar a la función para enviar el mensaje
+
         }
 
         // Agregar un mensaje inicial del bot desde Firebase
@@ -86,6 +98,18 @@ class MainActivity : AppCompatActivity() {
             .addOnFailureListener { exception ->
                 Log.w(TAG, "Error getting document.", exception) // Registrar error en caso de falla
             }
+
+        //Se obtiene el Id del usuario
+        val androidID = Settings.Secure.getString(
+            contentResolver, Settings.Secure.ANDROID_ID
+        )
+        
+        //Se agrega la consulta para saber si han utilizado la aplicacion
+        val data = hashMapOf("fecha" to currentDateAndTime, "androidId" to androidID)
+        db.collection("Registro").add(data).addOnSuccessListener{ documentReference->
+            Log.d(TAG, "DocumentSnapshot written with ID: ${documentReference.id}")
+        }.addOnFailureListener{e ->
+        Log.w(TAG, "Error adding document", e)}
     }
 
 
